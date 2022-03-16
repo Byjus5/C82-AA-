@@ -38,8 +38,8 @@ export default class TransactionScreen extends Component {
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
 
     this.setState({
-      /*status === "granted" is true when user has granted permission
-          status === "granted" is false when user has not granted the permission
+      /*status === "granted" es true cuando el usuario ha dado permiso
+          status === "granted" es false cuando el usuario no ha dado permiso
         */
       hasCameraPermissions: status === "granted",
       domState: domState,
@@ -74,9 +74,9 @@ export default class TransactionScreen extends Component {
     
          if (!transactionType) {
       this.setState({ bookId: "", studentId: "" });
-      // For Android users only
-      // ToastAndroid.show("The book doesn't exist in the library database!", ToastAndroid.SHORT);
-      Alert.alert("The book doesn't exist in the library database!");
+      // Solo para usuarios Android
+      // ToastAndroid.show("¡El libro no existe en la base de datos de la biblioteca!", ToastAndroid.SHORT);
+      Alert.alert("¡El libro no existe en la base de datos de la biblioteca!");
     } 
     else if (transactionType === "issue") {
            var isEligible = await this.checkStudentEligibilityForBookIssue(
@@ -86,9 +86,9 @@ export default class TransactionScreen extends Component {
       if (isEligible) {
         var { bookName, studentName } = this.state;
         this.initiateBookIssue(bookId, studentId, bookName, studentName);
-        // For Android users only
-      // ToastAndroid.show("Book issued to the student!", ToastAndroid.SHORT);
-      Alert.alert("Book issued to the student!");
+        // Solo para usuarios Android
+      // ToastAndroid.show("¡Libro solicitado por el alumno!", ToastAndroid.SHORT);
+      Alert.alert("¡Libro solicitado por el alumno!");
       }
       
         } else {
@@ -101,9 +101,9 @@ export default class TransactionScreen extends Component {
         var { bookName, studentName } = this.state;
         this.initiateBookReturn(bookId, studentId, bookName, studentName);
         
-       // For Android users only
-       // ToastAndroid.show("Book returned to the library!", ToastAndroid.SHORT);
-       Alert.alert("Book returned to the library!");
+       // Solo para usuarios Android
+       // ToastAndroid.show("¡Libro devuleto a la biblioteca!", ToastAndroid.SHORT);
+       Alert.alert("¡Libro devuleto a la biblioteca!");
       }
     }
       
@@ -139,7 +139,7 @@ export default class TransactionScreen extends Component {
 
   checkBookAvailability = async bookId => {
     const bookRef = await db
-      .collection("books")
+      .collection("libros")
       .where("book_id", "==", bookId)
       .get();
 
@@ -148,8 +148,8 @@ export default class TransactionScreen extends Component {
       transactionType = false;
     } else {
       bookRef.docs.map(doc => {
-        //if the book is available then transaction type will be issue
-        // otherwise it will be return
+        //si el libro está disponible, entonces el tipo de transacción será préstamo 
+        // sino será regresar
         transactionType = doc.data().is_book_available ? "issue" : "return";
       });
     }
@@ -159,7 +159,7 @@ export default class TransactionScreen extends Component {
   
   checkStudentEligibilityForBookIssue = async studentId => {
     const studentRef = await db
-      .collection("students")
+      .collection("alumnos")
       .where("student_id", "==", studentId)
       .get();
 
@@ -170,14 +170,14 @@ export default class TransactionScreen extends Component {
         studentId: ""
       });
       isStudentEligible = false;
-      Alert.alert("The student id doesn't exist in the database!");
+      Alert.alert("¡El ID del alumno no existe en la base de datos!");
     } else {
       studentRef.docs.map(doc => {
         if (doc.data().number_of_books_issued < 2) {
           isStudentEligible = true;
         } else {
           isStudentEligible = false;
-          Alert.alert("The student has already issued 2 books!");
+          Alert.alert("¡El alumno ya ha solicitado dos libros!");
           this.setState({
             bookId: "",
             studentId: ""
@@ -200,8 +200,8 @@ export default class TransactionScreen extends Component {
   
   
   initiateBookIssue = async (bookId, studentId, bookName, studentName) => {
-    //add a transaction
-    db.collection("transactions").add({
+    //Agrega una transacción
+    db.collection("transacciones").add({
       student_id: studentId,
       student_name: studentName,
       book_id: bookId,
@@ -209,20 +209,20 @@ export default class TransactionScreen extends Component {
       date: firebase.firestore.Timestamp.now().toDate(),
       transaction_type: "issue"
     });
-    //change book status
-    db.collection("books")
+    //cambia el estatus del libro
+    db.collection("libros")
       .doc(bookId)
       .update({
         is_book_available: false
       });
-    //change number  of issued books for student
-    db.collection("students")
+    //cambia el número de libros solicitados por el alumno
+    db.collection("alumnos")
       .doc(studentId)
       .update({
         number_of_books_issued: firebase.firestore.FieldValue.increment(1)
       });
 
-    // Updating local state
+    // Actualizar estado local
     this.setState({
       bookId: "",
       studentId: ""
@@ -230,8 +230,8 @@ export default class TransactionScreen extends Component {
   };
 
   initiateBookReturn = async (bookId, studentId, bookName, studentName) => {
-    //add a transaction
-    db.collection("transactions").add({
+    //Agregar una transacción
+    db.collection("transacciones").add({
       student_id: studentId,
       student_name: studentName,
       book_id: bookId,
@@ -239,20 +239,20 @@ export default class TransactionScreen extends Component {
       date: firebase.firestore.Timestamp.now().toDate(),
       transaction_type: "return"
     });
-    //change book status
-    db.collection("books")
+    //cambiar estatus del libro
+    db.collection("libros")
       .doc(bookId)
       .update({
         is_book_available: true
       });
-    //change number  of issued books for student
-    db.collection("students")
+    //cambiar el número de libros solicitados por el alumno
+    db.collection("alumnos")
       .doc(studentId)
       .update({
         number_of_books_issued: firebase.firestore.FieldValue.increment(-1)
       });
 
-    // Updating local state
+    // Actualizar estado local
     this.setState({
       bookId: "",
       studentId: ""
@@ -279,7 +279,7 @@ export default class TransactionScreen extends Component {
             <View style={styles.textinputContainer}>
               <TextInput
                 style={styles.textinput}
-                placeholder={"Book Id"}
+                placeholder={"ID del libro"}
                 placeholderTextColor={"#FFFFFF"}
                 value={bookId}
                 onChangeText={text => this.setState({ bookId: text })}
@@ -288,13 +288,13 @@ export default class TransactionScreen extends Component {
                 style={styles.scanbutton}
                 onPress={() => this.getCameraPermissions("bookId")}
               >
-                <Text style={styles.scanbuttonText}>Scan</Text>
+                <Text style={styles.scanbuttonText}>Escanear</Text>
               </TouchableOpacity>
             </View>
             <View style={[styles.textinputContainer, { marginTop: 25 }]}>
               <TextInput
                 style={styles.textinput}
-                placeholder={"Student Id"}
+                placeholder={"ID del alumno"}
                 placeholderTextColor={"#FFFFFF"}
                 value={studentId}
                 onChangeText={text => this.setState({ studentId: text })}
@@ -303,14 +303,14 @@ export default class TransactionScreen extends Component {
                 style={styles.scanbutton}
                 onPress={() => this.getCameraPermissions("studentId")}
               >
-                <Text style={styles.scanbuttonText}>Scan</Text>
+                <Text style={styles.scanbuttonText}>Escanear</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
               style={[styles.button, { marginTop: 25 }]}
               onPress={this.handleTransaction}
             >
-              <Text style={styles.buttonText}>Submit</Text>
+              <Text style={styles.buttonText}>Entregar</Text>
             </TouchableOpacity>
           </View>
         </ImageBackground>
